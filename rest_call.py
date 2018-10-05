@@ -19,14 +19,14 @@ def settings():
 
  Returns: tuple (Server, REST-API call, payload, headers)
  '''
- #rest_call = '/api/v1/ticket'
- #apic_em_ip = 'https://sandboxapicem.cisco.com'
- #payload = {'username':'devnetuser','password':'Cisco123!'}
- #headers = {'content-type' : 'application/json'}
  rest_call = '/api/v1/ticket'
- apic_em_ip = 'https://primeinfrasandbox.cisco.com'
- payload = {'username':'devnetuser','password':'DevNet123!'}
+ apic_em_ip = 'https://sandboxapicem.cisco.com'
+ payload = {'username':'devnetuser','password':'Cisco123!'}
  headers = {'content-type' : 'application/json'}
+ #rest_call = '/api/v1/ticket'
+ #apic_em_ip = 'https://primeinfrasandbox.cisco.com'
+ #payload = {'username':'devnetuser','password':'DevNet123!'}
+ #headers = {'content-type' : 'application/json'}
 
  return ((apic_em_ip, rest_call, payload, headers))
 
@@ -140,7 +140,7 @@ def demoPrime():
 
 
 def main():
- demoPrime()
+ demoApic()
 
 if __name__ == '__main__':
  main()
