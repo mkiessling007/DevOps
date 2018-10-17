@@ -47,6 +47,10 @@ def translateCSV(filename):
     try:
      # Check if we have an element in this line. If yes read it and add .yaml to create a filename for the new YAML file
      new_filename = row[0] + '.yaml'
+     # If we have a ";" in the string, we probably have an Excel format and hence no valid string for a hostname
+     if ';' in new_filename:
+      print('Found ";" in first coloum, probably a Excel formatted CSV?')
+      exit()
     except IndexError:
      # If there's no new elemnt in this CSV line stop the script. We should be done.
      exit()
