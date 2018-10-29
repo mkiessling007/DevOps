@@ -39,13 +39,15 @@ import xmltodict
 def search_filter():
     xml_filter = '''
 <filter>
-   <interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces">
-     <interface>
+   <interfaces-state xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces">
+    <interface>
       <name/>
       <type/>
-      <description/>
+      <admin-status/>
+      <oper-status/>
+      <last-change/>
      </interface>
-   </interfaces>
+   </interfaces-state>
  </filter>
 '''
     return xml_filter

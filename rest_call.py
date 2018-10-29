@@ -3,35 +3,41 @@
 # Import the modules required to make REST-API calls
 import requests
 import json
+import argparse
+import logging
+import sys
 from requests.auth import HTTPBasicAuth
 
 # Disable warnings
 requests.packages.urllib3.disable_warnings()
 
+def check_args():
+ parser = argparse.ArgumentParser(prog=sys.argv[0], description='Make REST-API calls with HTTPS')
 
-def settings():
- '''Set all variables.
+ parser.add_argument('-a', '--host', type=str, required=True,
+                     help="Device IP address or Hostname")
+ parser.add_argument('-u', '--username', type=str, required=True,
+                     help="Device Username (REST-API server username)")
+ parser.add_argument('-p', '--password', type=str, required=True,
+                     help="Device Password (REST-API server password)")
+ parser.add_argument('-d', '--debug', action='store_true',
+                     help="Enable basic debugging")
+ parser.add_argument('--prime', action='store_true',
+                     help="REST-API server is Cisco Primre Infrastructure")
+ parser.add_argument('-c', '--call', type=str, required=True,
+                     help="REST-API call")
+
+ parser.set_defaults(debug=False)
+ args = parser.parse_args()
+
+ if args.debug:
+  logging.basicConfig(level=logging.DEBUG)
+
+ return args
 
 
- Takes no argument. Set server IP address or hostname and username and password.
- The "rest_call" variable is only used for requesting a aut ticket on APIC-EM systems.
 
-
- Returns: tuple (Server, REST-API call, payload, headers)
- '''
- rest_call = '/api/v1/ticket'
- apic_em_ip = 'https://sandboxapicem.cisco.com'
- payload = {'username':'devnetuser','password':'Cisco123!'}
- headers = {'content-type' : 'application/json'}
- #rest_call = '/api/v1/ticket'
- #apic_em_ip = 'https://primeinfrasandbox.cisco.com'
- #payload = {'username':'devnetuser','password':'DevNet123!'}
- #headers = {'content-type' : 'application/json'}
-
- return ((apic_em_ip, rest_call, payload, headers))
-
-
-def getToken():
+def getToken(args):
  '''Get APIC-EM authentication token
 
 
@@ -42,12 +48,12 @@ def getToken():
 
  Returns: string
  '''
- # Read the settings to set the variables needed to call for the authentication token
- setting = settings()
+ payload = {'username': args.username,'password': args.password}
+ headers = {'content-type' : 'application/json'}
  # Build the URL (IP address + rest_call)
- url = setting[0] + setting[1]
+ url = 'https://' + args.host + '/api/v1/ticket' 
  # Call POST and assign the response to a variable and put it into JSON formatting
- response = requests.post(url, data=json.dumps(setting[2]), headers=setting[3], verify=False).json()
+ response = requests.post(url, data=json.dumps(payload), headers=headers, verify=False).json()
  # Extract the authentication token
  token = response['response']['serviceTicket']
 
@@ -55,7 +61,7 @@ def getToken():
  return (token)
 
 
-def callApic(rest_uri):
+def callApic(args):
  '''REST-API GET request
 
 
@@ -67,13 +73,11 @@ def callApic(rest_uri):
  Returns: dictionary
  '''
  # Get authentication token with function "token"
- token = getToken()
+ token = getToken(args)
  # Build the header
  headers = {'X-AUTH-TOKEN': token}
- # Get settings for REST-API call
- setting = settings()
  # Build the URL
- url = setting[0] + rest_uri
+ url = 'https://' + args.host + args.call
  # Call GET and assign the response to a variable
  response = requests.get(url, headers=headers, verify=False).json()
 
@@ -81,7 +85,7 @@ def callApic(rest_uri):
  return (response)
 
 
-def callPrime(rest_uri):
+def callPrime(args):
  '''REST-API GET request
 
 
@@ -92,12 +96,10 @@ def callPrime(rest_uri):
 
  Returns: dictionary
  '''
- # Get settings
- setting = settings()
  # Build the HTTP authentication
- basic_auth = HTTPBasicAuth(setting[2]['username'], setting[2]['password'])
+ basic_auth = HTTPBasicAuth(args.username, args.password)
  # Build the URL
- url = setting[0] + rest_uri
+ url = 'https://' + args.host + args.call
  # Call GET and assign the response to a variable
  response = requests.get(url, auth=basic_auth, verify=False).json()
 
@@ -119,16 +121,19 @@ def hJson(jsonDict):
  return (readable)
 
 
-def demoApic(): 
+def demoApic(args): 
  # Demo using Cisco APIC-EM controller
- output = callApic('/api/v1/network-device')
+ # use this api call: /api/v1/network-device
+ output = callApic(args)
  for device in output['response']:
      print ('Hostname: ' + device['hostname'])
+ exit(0)
 
 
-def demoPrime():
+def demoPrime(args):
  # Demo using Cisco Prime Infrastructure
- output = callPrime('/webacs/api/v3/data/Devices.json')
+ # Use this api call: /webacs/api/v3/data/Devices.json
+ output = callPrime(args)
  for device in output['queryResponse']['entityId']:
      device_detail_url = device['@url']
      device_detail_url = device_detail_url.lstrip('https://primeinfrasandbox.cisco.com')
@@ -140,7 +145,13 @@ def demoPrime():
 
 
 def main():
- demoApic()
+ args = check_args()
+ if args.prime:
+  demoPrime(args)
+  # Use this instead demo function for your own scripting: output = callPrime(args)
+ else:
+  demoApic(args)
+  # Use this instead demo function for your own scripting: output = callApic(args)
 
 if __name__ == '__main__':
  main()
