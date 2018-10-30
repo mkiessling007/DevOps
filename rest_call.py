@@ -24,8 +24,10 @@ def check_args():
                      help="Enable basic debugging")
  parser.add_argument('--prime', action='store_true',
                      help="REST-API server is Cisco Primre Infrastructure")
+ parser.add_argument('--html', action='store_true',
+                     help="Output will be HTML formated for use with a web framework (eg Flask)")
  parser.add_argument('-c', '--call', type=str, required=True,
-                     help="REST-API call")
+                     help="REST-API call, eg. /api/v1/network-device")
 
  parser.set_defaults(debug=False)
  args = parser.parse_args()
@@ -121,13 +123,25 @@ def hJson(jsonDict):
  return (readable)
 
 
+def printApicResponse(apic_response):
+ for data in apic_response['response']:
+     print(json.dumps(data, sort_keys=True, indent=4))
+
+
+def printHTMLApicResponse(apic_response, args):
+ print('<h2>https://' + args.host + args.call + '</h2>')
+ for data in apic_response['response']:
+     print('<p>')
+     print(json.dumps(data, sort_keys=True, indent=4 , separators=('<br>&emsp;', ':')))
+     print('</p>')
+
+
 def demoApic(args): 
  # Demo using Cisco APIC-EM controller
  # use this api call: /api/v1/network-device
  output = callApic(args)
  for device in output['response']:
      print ('Hostname: ' + device['hostname'])
- exit(0)
 
 
 def demoPrime(args):
@@ -150,8 +164,12 @@ def main():
   demoPrime(args)
   # Use this instead demo function for your own scripting: output = callPrime(args)
  else:
-  demoApic(args)
-  # Use this instead demo function for your own scripting: output = callApic(args)
+  #demoApic(args)
+  output = callApic(args)
+  if args.html:
+   printHTMLApicResponse(output, args)
+  else:
+   printApicResponse(output)
 
 if __name__ == '__main__':
  main()

@@ -3,23 +3,27 @@
 import csv
 import yaml
 import sys
+import argparse
+import logging
 
+def check_args():
+ parser = argparse.ArgumentParser(prog=sys.argv[0], description='Takes a CSV file ad writes a YAML file for each line. The filename should be within the CSV, eg in row 1')
 
-def settings():
- '''Set configuration settings.
+ parser.add_argument('-c', '--data', type=str, required=True,
+                     help="Data as CSV file")
+ parser.add_argument('-f', '--filename', type=int, required=False,
+                     help="Number of line which to use as filname, defaults to row 1")
+ parser.add_argument('-d', '--debug', action='store_true',
+                     help="Enable basic debugging")
 
- Takes no argument
+ parser.set_defaults(debug=False)
+ args = parser.parse_args()
 
- Returns a string
- '''
- # Check wether we have a argument we can use as filename
- if len(sys.argv) > 1:
-  csv_file = sys.argv[1]
- else: 
-  # Set the source CSV file if we don't have a command line argument
-  csv_file = 'test.csv'
- # Return name of CSV file
- return csv_file
+ if args.debug:
+  logging.basicConfig(level=logging.DEBUG)
+
+ return args
+
 
 def translateCSV(filename):
  '''Translate a CSV file int one or more YAML files. Each line in the CSV file
@@ -69,8 +73,9 @@ def translateCSV(filename):
 
 
 def main():
- filename = settings()
- translateCSV(filename)
+ # Check command line arguments
+ args = check_args()
+ translateCSV(args.data)
 
 
 if __name__ == "__main__":
