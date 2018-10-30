@@ -7,5 +7,5 @@ class RestApiForm(FlaskForm):
     restapicall = StringField('Rest API call', validators=[DataRequired()])
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
-    html = BooleanField('HTML Output')
+    prime = BooleanField('Cisco Prime')
     submit = SubmitField('Go!')

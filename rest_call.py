@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python
 
 # Import the modules required to make REST-API calls
 import requests
@@ -23,7 +23,7 @@ def check_args():
  parser.add_argument('-d', '--debug', action='store_true',
                      help="Enable basic debugging")
  parser.add_argument('--prime', action='store_true',
-                     help="REST-API server is Cisco Primre Infrastructure")
+                     help="REST-API server is Cisco Prime Infrastructure")
  parser.add_argument('--html', action='store_true',
                      help="Output will be HTML formated for use with a web framework (eg Flask)")
  parser.add_argument('-c', '--call', type=str, required=True,
@@ -42,20 +42,23 @@ def check_args():
 def getToken(args):
  '''Get APIC-EM authentication token
 
-
  Doesn't take any keyword arguments. Only calls settings() and connects
  to APIC-EM to receive a authentication token. This function is only used
  for APIC-EM systems.
-
 
  Returns: string
  '''
  payload = {'username': args.username,'password': args.password}
  headers = {'content-type' : 'application/json'}
  # Build the URL (IP address + rest_call)
- url = 'https://' + args.host + '/api/v1/ticket' 
+ url = 'https://' + args.host + '/api/v1/ticket'
  # Call POST and assign the response to a variable and put it into JSON formatting
- response = requests.post(url, data=json.dumps(payload), headers=headers, verify=False).json()
+ response = requests.post(url, data=json.dumps(payload), headers=headers, verify=False)
+ # Check if we received a 401 due to wrong user credentials
+ if response.status_code == 404:
+      print("404: Wrong user credentials")
+      exit(1)
+ response = response.json()
  # Extract the authentication token
  token = response['response']['serviceTicket']
 
@@ -66,11 +69,9 @@ def getToken(args):
 def callApic(args):
  '''REST-API GET request
 
-
  Use this class to perform a REST-API call against a APIC-EM server.
  Takes two arguments:
  rest_uri = eg /network-device
-
 
  Returns: dictionary
  '''
@@ -81,8 +82,13 @@ def callApic(args):
  # Build the URL
  url = 'https://' + args.host + args.call
  # Call GET and assign the response to a variable
- response = requests.get(url, headers=headers, verify=False).json()
-
+ response = requests.get(url, headers=headers, verify=False)
+  # Check if we received a 401 due to wrong user credentials
+ if response.status_code == 401:
+     print("401: Unauthorized Access - Access Prohibited")
+     exit(1)
+ # Transform the received data into a JSON dictionary
+ response=response.json()
  # Return the respons as dictionary json
  return (response)
 
@@ -90,11 +96,9 @@ def callApic(args):
 def callPrime(args):
  '''REST-API GET request
 
-
  Use this class to perform a REST-API call against a Cisco Prime Server server.
  Takes two arguments:
  rest_uri = eg /network-device
-
 
  Returns: dictionary
  '''
@@ -103,24 +107,15 @@ def callPrime(args):
  # Build the URL
  url = 'https://' + args.host + args.call
  # Call GET and assign the response to a variable
- response = requests.get(url, auth=basic_auth, verify=False).json()
-
+ response = requests.get(url, auth=basic_auth, verify=False)
+ # Check if we received a 401 due to wrong user credentials
+ if response.status_code == 401:
+     print("401: Unauthorized Access - Access Prohibited")
+     exit(1)
+ # Transform the received data into a JSON dictionary
+ response=response.json()
  # Return the respons as dictionary json
  return (response)
-
-
-def hJson(jsonDict):
- '''Print json in a human readable format
- 
- 
- Takes one argument:
- jsonDict = A json formatted data
- 
- 
- Returns: string
- '''
- readable = json.dumps(jsonDict, sort_keys=True, indent=4)
- return (readable)
 
 
 def printApicResponse(apic_response):
@@ -130,13 +125,23 @@ def printApicResponse(apic_response):
 
 def printHTMLApicResponse(apic_response, args):
  print('<h2>https://' + args.host + args.call + '</h2>')
+ # All interresting information should be in key "response"
  for data in apic_response['response']:
      print('<p>')
      print(json.dumps(data, sort_keys=True, indent=4 , separators=('<br>&emsp;', ':')))
      print('</p>')
 
 
-def demoApic(args): 
+def printHTMLPrimeResponse(prime_response, args):
+ print('<h2>https://' + args.host + args.call + '</h2>')
+ # If we have to deal with a Cisco Prime, the received JSON format is different to APIC controllers
+ for data in prime_response['queryResponse']['entityId']:
+     print('<p>')
+     print(json.dumps(data, sort_keys=True, indent=4 , separators=('<br>&emsp;', ':')))
+     print('</p>')
+
+
+def demoApic(args):
  # Demo using Cisco APIC-EM controller
  # use this api call: /api/v1/network-device
  output = callApic(args)
@@ -161,8 +166,12 @@ def demoPrime(args):
 def main():
  args = check_args()
  if args.prime:
-  demoPrime(args)
-  # Use this instead demo function for your own scripting: output = callPrime(args)
+  # demoPrime(args)
+  output = callPrime(args)
+  if args.html:
+      printHTMLPrimeResponse(output, args)
+  else:
+      printPrimeResponse(output)
  else:
   #demoApic(args)
   output = callApic(args)
@@ -173,4 +182,3 @@ def main():
 
 if __name__ == '__main__':
  main()
-
