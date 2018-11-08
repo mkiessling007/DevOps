@@ -147,12 +147,12 @@ def printPrimeResponse(prime_response):
      if 'entityId' in prime_response['queryResponse'].keys():
          for data in prime_response['queryResponse']['entityId']:
              print(json.dumps(data, sort_keys=True, indent=4 ))
-         elif 'entity' in prime_response['queryResponse'].keys():
-             for data in prime_response['queryResponse']['entity']:
+     elif 'entity' in prime_response['queryResponse'].keys():
+         for data in prime_response['queryResponse']['entity']:
                  print(json.dumps(data, sort_keys=True, indent=4 ))
-             else:
-                 print('No "entity/entityId" found in recieved data. Printing raw JSON:\n')
-                 print(json.dumps(prime_response))
+     else:
+         print('No "entity/entityId" found in recieved data. Printing raw JSON:\n')
+         print(json.dumps(prime_response))
  except:
      print('No "queryResponse" found in recieved data. Printing raw JSON:\n')
      print(json.dumps(prime_response))
