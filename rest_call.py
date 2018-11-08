@@ -56,7 +56,10 @@ def getToken(args):
  response = requests.post(url, data=json.dumps(payload), headers=headers, verify=False)
  # Check if we received a 401 due to wrong user credentials
  if response.status_code == 404:
-      print("404: Wrong user credentials")
+      print("404: Not Found")
+      exit(1)
+ elif response.status_code == 401:
+      print("401: Unauthorized Access - Access Prohibited")
       exit(1)
  response = response.json()
  # Extract the authentication token
@@ -113,7 +116,13 @@ def callPrime(args):
      print("401: Unauthorized Access - Access Prohibited")
      exit(1)
  # Transform the received data into a JSON dictionary
- response=response.json()
+ try:
+     response=response.json()
+ except:
+     print('Something went wrong! Data recieved is not JSON formatted. Need to exit here')
+     print('Since you are connecting to a Cisco Prime Infrastructure, maybe forgot ".json"?')
+     print('Recieved HTTPS status code: {}'.format(response.status_code))
+     exit(1)
  # Return the respons as dictionary json
  return (response)
 
@@ -130,6 +139,16 @@ def printHTMLApicResponse(apic_response, args):
      print('<p>')
      print(json.dumps(data, sort_keys=True, indent=4 , separators=('<br>&emsp;', ':')))
      print('</p>')
+
+
+def printPrimeResponse(prime_response):
+ # If we have to deal with a Cisco Prime, the received JSON format is different to APIC controllers
+ try:
+     for data in prime_response['queryResponse']['entityId']:
+         print(json.dumps(data, sort_keys=True, indent=4 ))
+ except:
+     print('No "queryResponse" found in recieved data. Printing raw JSON:\n')
+     print(json.dumps(prime_response))
 
 
 def printHTMLPrimeResponse(prime_response, args):
